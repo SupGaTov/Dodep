@@ -1,0 +1,609 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Игровой автомат - Lucky Slots</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-icons@0.171.0/font.min.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="container header-container">
+        <a href="index.html" class="logo">Lucky Slots</a>
+        
+        <div class="header-controls">
+          <div class="balance-display">
+            <i class="lucide-coins balance-icon"></i>
+            <span id="balance">1000</span> ₽
+          </div>
+          
+          <a href="profile.html" class="header-btn">
+            <i class="lucide-user"></i>
+          </a>
+          
+          <a href="settings.html" class="header-btn">
+            <i class="lucide-settings"></i>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container main-content">
+      <a href="index.html" class="back-button">
+        <i class="lucide-arrow-left"></i>
+        Вернуться к списку
+      </a>
+      
+      <div class="glass-panel" id="slot-container">
+        <!-- Slot machine content will be inserted here by JavaScript -->
+      </div>
+      
+      <div class="glass-panel payout-table" id="payout-table">
+        <!-- Payout table will be inserted here by JavaScript -->
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div>
+            <p class="copyright">© 2025 Lucky Slots. Все права защищены.</p>
+          </div>
+          
+          <nav class="footer-nav">
+            <a href="index.html" class="footer-link">Главная</a>
+            <a href="profile.html" class="footer-link">Профиль</a>
+            <a href="settings.html" class="footer-link">Настройки</a>
+          </nav>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast notification container -->
+  <div id="toast-container"></div>
+
+  <!-- Audio elements -->
+  <audio id="spin-sound" src="sounds/spin-loop.mp3" loop></audio>
+  <audio id="win-sound" src="sounds/win.mp3"></audio>
+  <audio id="big-win-sound" src="sounds/big-win.mp3"></audio>
+  <audio id="stop-sound" src="sounds/stop.mp3"></audio>
+  <audio id="jackpot-sound" src="sounds/jackpot.mp3"></audio>
+  <audio id="card-deal-sound" src="sounds/card-deal.mp3"></audio>
+
+  <script src="js/storage.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/slot-data.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    // Get slot ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const slotId = urlParams.get('id');
+    let currentSlot = null;
+    
+    // State variables
+    let isSpinning = false;
+    let reels = [];
+    let currentBet = 0;
+    let winAmount = 0;
+    let winningSymbols = [];
+    let spinSound = null;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      // Update balance display
+      ui.updateBalance();
+      
+      // Find slot data
+      currentSlot = SLOTS.find(slot => slot.id === slotId);
+      
+      if (!currentSlot) {
+        // Redirect to home if slot not found
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      // Update page title
+      document.title = `${currentSlot.name} - Lucky Slots`;
+      
+      // Set initial bet
+      currentBet = currentSlot.cost;
+      
+      // Initialize slot machine
+      initializeSlotMachine();
+      
+      // Initialize payout table
+      if (!currentSlot.isBirthdaySlot) {
+        initializePayoutTable();
+      } else {
+        document.getElementById('payout-table').style.display = 'none';
+      }
+    });
+    
+    function initializeSlotMachine() {
+      const slotContainer = document.getElementById('slot-container');
+      slotContainer.className = `glass-panel ${currentSlot.bgColor || ''}`;
+      
+      // Create slot machine markup
+      const slotMachine = document.createElement('div');
+      slotMachine.className = 'slot-machine';
+      
+      // Slot controls
+      const slotControls = document.createElement('div');
+      slotControls.className = 'slot-controls';
+      
+      const slotTitle = document.createElement('h2');
+      slotTitle.className = 'slot-title';
+      slotTitle.textContent = currentSlot.name;
+      
+      const betControlsDiv = document.createElement('div');
+      betControlsDiv.className = 'bet-controls';
+      
+      // Add bet controls
+      const minusButton = document.createElement('button');
+      minusButton.className = 'bet-button';
+      minusButton.innerHTML = '<i class="lucide-minus-circle"></i>';
+      minusButton.onclick = () => changeBet(-100);
+      
+      const betInput = document.createElement('input');
+      betInput.type = 'number';
+      betInput.className = 'bet-input';
+      betInput.value = currentBet;
+      betInput.min = currentSlot.cost;
+      betInput.max = 100000;
+      betInput.onchange = handleBetChange;
+      
+      const plusButton = document.createElement('button');
+      plusButton.className = 'bet-button';
+      plusButton.innerHTML = '<i class="lucide-plus-circle"></i>';
+      plusButton.onclick = () => changeBet(100);
+      
+      betControlsDiv.appendChild(minusButton);
+      betControlsDiv.appendChild(betInput);
+      betControlsDiv.appendChild(plusButton);
+      
+      // Add free spins badge if available
+      const freeSpins = gameStorage.getFreeSpins(currentSlot.id);
+      if (freeSpins > 0) {
+        const freeSpinsBadge = document.createElement('div');
+        freeSpinsBadge.className = 'free-spins-badge';
+        freeSpinsBadge.innerHTML = `<i class="lucide-star"></i> ${freeSpins} фриспинов`;
+        betControlsDiv.appendChild(freeSpinsBadge);
+      }
+      
+      slotControls.appendChild(slotTitle);
+      slotControls.appendChild(betControlsDiv);
+      
+      // Reels container
+      const reelsContainer = document.createElement('div');
+      reelsContainer.className = 'reels-container';
+      
+      // Initialize reels
+      reels = [
+        [currentSlot.symbols[0], currentSlot.symbols[1], currentSlot.symbols[2]],
+        [currentSlot.symbols[1], currentSlot.symbols[2], currentSlot.symbols[0]],
+        [currentSlot.symbols[2], currentSlot.symbols[0], currentSlot.symbols[1]]
+      ];
+      
+      // Create reels
+      for (let i = 0; i < 3; i++) {
+        const reel = document.createElement('div');
+        reel.className = 'reel';
+        reel.id = `reel-${i}`;
+        
+        const symbolElement = ui.createSymbol(reels[i][1], currentSlot.theme);
+        reel.appendChild(symbolElement);
+        reelsContainer.appendChild(reel);
+      }
+      
+      // Slot footer
+      const slotFooter = document.createElement('div');
+      slotFooter.className = 'slot-footer';
+      
+      const winDisplay = document.createElement('div');
+      winDisplay.className = 'win-display';
+      winDisplay.id = 'win-display';
+      
+      const spinButton = document.createElement('button');
+      spinButton.className = 'spin-button';
+      spinButton.id = 'spin-button';
+      
+      const freeSpinsCount = gameStorage.getFreeSpins(currentSlot.id);
+      spinButton.textContent = freeSpinsCount > 0 ? 'Бесплатное вращение' : 'Крутить';
+      spinButton.onclick = spin;
+      
+      slotFooter.appendChild(winDisplay);
+      slotFooter.appendChild(spinButton);
+      
+      // Assemble slot machine
+      slotMachine.appendChild(slotControls);
+      slotMachine.appendChild(reelsContainer);
+      slotMachine.appendChild(slotFooter);
+      
+      slotContainer.appendChild(slotMachine);
+      
+      // Update button state
+      updateSpinButtonState();
+    }
+    
+    function initializePayoutTable() {
+      const payoutTable = document.getElementById('payout-table');
+      payoutTable.innerHTML = '';
+      
+      const title = document.createElement('h2');
+      title.className = 'payout-title';
+      title.textContent = 'Таблица выплат';
+      payoutTable.appendChild(title);
+      
+      const payoutGrid = document.createElement('div');
+      payoutGrid.className = 'payout-grid';
+      
+      // Add payout items
+      for (const [symbol, payout] of Object.entries(currentSlot.payouts)) {
+        const payoutItem = document.createElement('div');
+        payoutItem.className = 'payout-item';
+        
+        const symbolElement = document.createElement('div');
+        symbolElement.className = 'payout-symbol';
+        symbolElement.textContent = symbol;
+        
+        const payoutValue = document.createElement('div');
+        payoutValue.className = 'payout-value';
+        payoutValue.textContent = `x${payout}`;
+        
+        payoutItem.appendChild(symbolElement);
+        payoutItem.appendChild(payoutValue);
+        payoutGrid.appendChild(payoutItem);
+      }
+      
+      payoutTable.appendChild(payoutGrid);
+      
+      // Add special symbol info if available
+      if (currentSlot.specialSymbol) {
+        const specialInfo = document.createElement('div');
+        specialInfo.className = 'special-symbol-info';
+        
+        const specialTitle = document.createElement('h3');
+        specialTitle.className = 'special-symbol-title';
+        specialTitle.textContent = 'Специальный символ';
+        
+        const specialDescription = document.createElement('p');
+        specialDescription.className = 'special-symbol-description';
+        specialDescription.textContent = `Символ ${currentSlot.specialSymbol} - это скаттер. Соберите 3 или более таких символа, чтобы получить бесплатные вращения!`;
+        
+        specialInfo.appendChild(specialTitle);
+        specialInfo.appendChild(specialDescription);
+        payoutTable.appendChild(specialInfo);
+      }
+    }
+    
+    function changeBet(amount) {
+      const newBet = Math.max(currentSlot.cost, Math.min(100000, currentBet + amount));
+      currentBet = newBet;
+      
+      const betInput = document.querySelector('.bet-input');
+      if (betInput) {
+        betInput.value = newBet;
+      }
+      
+      updateSpinButtonState();
+    }
+    
+    function handleBetChange(e) {
+      const value = parseInt(e.target.value) || currentSlot.cost;
+      currentBet = Math.max(currentSlot.cost, Math.min(100000, value));
+      e.target.value = currentBet;
+      
+      updateSpinButtonState();
+    }
+    
+    function updateSpinButtonState() {
+      const spinButton = document.getElementById('spin-button');
+      if (!spinButton) return;
+      
+      const freeSpins = gameStorage.getFreeSpins(currentSlot.id);
+      const balance = gameStorage.getBalance();
+      
+      const disabled = isSpinning || (freeSpins === 0 && balance < currentBet);
+      spinButton.disabled = disabled;
+      
+      spinButton.textContent = freeSpins > 0 ? 'Бесплатное вращение' : 'Крутить';
+    }
+    
+    function getRandomSymbol() {
+      return currentSlot.symbols[Math.floor(Math.random() * currentSlot.symbols.length)];
+    }
+    
+    function spin() {
+      if (isSpinning) return;
+      
+      // Check if we have free spins
+      const hasFreeSpins = gameStorage.useFreeSpins(currentSlot.id);
+      
+      // Deduct bet from balance if no free spins
+      if (!hasFreeSpins) {
+        const balance = gameStorage.getBalance();
+        if (balance < currentBet) {
+          ui.showToast('Недостаточно средств!', 'error');
+          return;
+        }
+        
+        gameStorage.setBalance(balance - currentBet);
+        ui.updateBalance();
+      }
+      
+      // Reset state
+      winAmount = 0;
+      winningSymbols = [];
+      
+      // Update UI
+      const winDisplay = document.getElementById('win-display');
+      if (winDisplay) winDisplay.innerHTML = '';
+      
+      // Update free spins badge if needed
+      const freeSpinsBadge = document.querySelector('.free-spins-badge');
+      const freeSpinsCount = gameStorage.getFreeSpins(currentSlot.id);
+      
+      if (freeSpinsBadge) {
+        if (freeSpinsCount > 0) {
+          freeSpinsBadge.innerHTML = `<i class="lucide-star"></i> ${freeSpinsCount} фриспинов`;
+        } else {
+          freeSpinsBadge.remove();
+        }
+      } else if (freeSpinsCount > 0) {
+        const newBadge = document.createElement('div');
+        newBadge.className = 'free-spins-badge';
+        newBadge.innerHTML = `<i class="lucide-star"></i> ${freeSpinsCount} фриспинов`;
+        document.querySelector('.bet-controls').appendChild(newBadge);
+      }
+      
+      // Start spinning
+      isSpinning = true;
+      updateSpinButtonState();
+      
+      // Play spin sound
+      if (currentSlot.isBirthdaySlot) {
+        // No special sound for birthday slot
+      } else {
+        spinSound = audioManager.playLoopingSound('spin-loop');
+      }
+      
+      // Animation variables
+      const spinDuration = 2000;
+      const spinInterval = 100;
+      let elapsed = 0;
+      
+      // Spin animation
+      const spinAnimation = setInterval(() => {
+        elapsed += spinInterval;
+        
+        // Update reels with random symbols
+        for (let i = 0; i < 3; i++) {
+          reels[i] = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
+          
+          const reel = document.getElementById(`reel-${i}`);
+          if (reel) {
+            reel.innerHTML = '';
+            reel.appendChild(ui.createSymbol(reels[i][1], currentSlot.theme));
+          }
+        }
+        
+        // Check if animation is complete
+        if (elapsed >= spinDuration) {
+          clearInterval(spinAnimation);
+          
+          // Stop spin sound
+          if (spinSound) {
+            audioManager.stopSound(spinSound);
+            spinSound = null;
+          }
+          
+          // Play stop sound
+          audioManager.playSound('stop');
+          
+          // Determine outcome
+          determineOutcome(hasFreeSpins);
+        }
+      }, spinInterval);
+    }
+    
+    function determineOutcome(wasFree) {
+      let finalReels = [];
+      
+      if (currentSlot.isBirthdaySlot) {
+        // Birthday slot always wins
+        finalReels = [
+          ["7", "7", "7"],
+          ["7", "7", "7"],
+          ["7", "7", "7"]
+        ];
+        
+        winAmount = currentBet * 2;
+        winningSymbols = ["7", "7", "7"];
+        
+        // Show jackpot overlay
+        showJackpot();
+      } else {
+        // Normal outcome determination
+        finalReels = generateOutcome(wasFree);
+        
+        // Get middle row
+        const midRow = [finalReels[0][1], finalReels[1][1], finalReels[2][1]];
+        
+        // Check for wins
+        const uniqueSymbols = new Set(midRow);
+        
+        if (uniqueSymbols.size === 1) {
+          // All three symbols match
+          const symbol = midRow[0];
+          winAmount = currentSlot.payouts[symbol] * currentBet;
+          winningSymbols = [symbol, symbol, symbol];
+          
+          // Check for special symbol (scatter)
+          if (symbol === currentSlot.specialSymbol) {
+            gameStorage.addFreeSpins(currentSlot.id, 5);
+            
+            // Update free spins badge
+            const freeSpinsCount = gameStorage.getFreeSpins(currentSlot.id);
+            const betControls = document.querySelector('.bet-controls');
+            
+            let freeSpinsBadge = document.querySelector('.free-spins-badge');
+            if (!freeSpinsBadge && betControls) {
+              freeSpinsBadge = document.createElement('div');
+              freeSpinsBadge.className = 'free-spins-badge';
+              betControls.appendChild(freeSpinsBadge);
+            }
+            
+            if (freeSpinsBadge) {
+              freeSpinsBadge.innerHTML = `<i class="lucide-star"></i> ${freeSpinsCount} фриспинов`;
+            }
+          }
+        } else if (uniqueSymbols.size === 2) {
+          // Two matching symbols
+          const counts = {};
+          midRow.forEach(s => {
+            counts[s] = (counts[s] || 0) + 1;
+          });
+          
+          for (const [symbol, count] of Object.entries(counts)) {
+            if (count === 2) {
+              winAmount = Math.floor(currentSlot.payouts[symbol] * currentBet * 0.5);
+              winningSymbols = midRow.filter(s => s === symbol);
+              break;
+            }
+          }
+        }
+        
+        // Check for scatter symbols across all positions
+        if (currentSlot.specialSymbol) {
+          let scatterCount = 0;
+          finalReels.forEach(reel => {
+            reel.forEach(symbol => {
+              if (symbol === currentSlot.specialSymbol) scatterCount++;
+            });
+          });
+          
+          if (scatterCount >= 3) {
+            gameStorage.addFreeSpins(currentSlot.id, scatterCount * 2);
+            
+            // Update free spins badge
+            const freeSpinsCount = gameStorage.getFreeSpins(currentSlot.id);
+            const betControls = document.querySelector('.bet-controls');
+            
+            let freeSpinsBadge = document.querySelector('.free-spins-badge');
+            if (!freeSpinsBadge && betControls) {
+              freeSpinsBadge = document.createElement('div');
+              freeSpinsBadge.className = 'free-spins-badge';
+              betControls.appendChild(freeSpinsBadge);
+            }
+            
+            if (freeSpinsBadge) {
+              freeSpinsBadge.innerHTML = `<i class="lucide-star"></i> ${freeSpinsCount} фриспинов`;
+            }
+          }
+        }
+      }
+      
+      // Update reels with final outcome
+      for (let i = 0; i < 3; i++) {
+        const reel = document.getElementById(`reel-${i}`);
+        if (reel) {
+          reel.innerHTML = '';
+          const isWinning = winningSymbols.includes(finalReels[i][1]);
+          reel.appendChild(ui.createSymbol(finalReels[i][1], currentSlot.theme, isWinning));
+        }
+      }
+      
+      isSpinning = false;
+      updateSpinButtonState();
+      
+      // Show win amount after a short delay
+      setTimeout(() => {
+        if (winAmount > 0) {
+          const winDisplay = document.getElementById('win-display');
+          if (winDisplay) {
+            winDisplay.innerHTML = `<i class="lucide-coins"></i> Выигрыш: ${ui.formatNumber(winAmount)} ₽`;
+          }
+          
+          // Add to balance
+          gameStorage.addToBalance(winAmount);
+          ui.updateBalance();
+          
+          // Add to history
+          gameStorage.addToHistory(currentSlot.name, winAmount);
+          
+          // Play win sound
+          if (winAmount >= currentBet * 5) {
+            audioManager.playSound('big-win');
+          } else {
+            audioManager.playSound('win');
+          }
+          
+          if (currentSlot.isBirthdaySlot) {
+            audioManager.playSound('jackpot');
+          }
+          
+          // Show toast
+          ui.showToast(`Вы выиграли ${ui.formatNumber(winAmount)} ₽!`, 'success');
+        }
+      }, 500);
+    }
+    
+    function generateOutcome(wasFree) {
+      const winProbability = wasFree ? 0.6 : 0.3;
+      const balance = gameStorage.getBalance();
+      const balanceAdjustment = balance < 500 ? 0.2 : 0;
+      const isWin = Math.random() < (winProbability + balanceAdjustment);
+      
+      if (isWin) {
+        // Generate a winning outcome
+        const winningSymbol = currentSlot.symbols[Math.floor(Math.random() * (currentSlot.symbols.length - (currentSlot.specialSymbol ? 1 : 0)))];
+        
+        return [
+          [getRandomSymbol(), winningSymbol, getRandomSymbol()],
+          [getRandomSymbol(), winningSymbol, getRandomSymbol()],
+          [getRandomSymbol(), winningSymbol, getRandomSymbol()]
+        ];
+      } else {
+        // Generate a losing outcome
+        let result = [
+          [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()],
+          [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()],
+          [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()]
+        ];
+        
+        // Ensure it's not accidentally a win
+        while (new Set([result[0][1], result[1][1], result[2][1]]).size === 1) {
+          result[2][1] = getRandomSymbol();
+        }
+        
+        return result;
+      }
+    }
+    
+    function showJackpot() {
+      // Create jackpot overlay
+      const slotMachine = document.querySelector('.slot-machine');
+      if (!slotMachine) return;
+      
+      const jackpotOverlay = document.createElement('div');
+      jackpotOverlay.className = 'jackpot-overlay';
+      
+      const jackpotContent = document.createElement('div');
+      jackpotContent.innerHTML = `
+        <h2 class="jackpot-text">С ДНЕМ РОЖДЕНИЯ КИРЮХА!</h2>
+        <p class="text-casino-gold">ОТЛИЧНОГО ТЕБЕ ДНЯ!</p>
+      `;
+      
+      jackpotOverlay.appendChild(jackpotContent);
+      slotMachine.appendChild(jackpotOverlay);
+    }
+  </script>
+</body>
+</html>

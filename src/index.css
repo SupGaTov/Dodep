@@ -1,0 +1,110 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 72.2% 50.6%;
+    --primary-foreground: 0 85.7% 97.3%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 48 96.5% 50.4%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 48 96.5% 50.4%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 72.2% 50.6%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 48 96.5% 50.4%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-gradient-to-b from-[#0D0D1A] to-[#1A1F2C] text-white/90;
+    background-image: 
+      linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23FFFFFF' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+      radial-gradient(circle at 50% 50%, rgba(37, 38, 43, 0.9) 0%, rgba(2, 8, 16, 0.95) 100%);
+    background-size: auto, 60px 60px, 100% 100%;
+    background-position: center;
+    background-repeat: repeat, repeat, no-repeat;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, p, span, div {
+    @apply text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)];
+  }
+}
+
+@layer components {
+  .slot-machine {
+    @apply relative bg-casino-black rounded-xl overflow-hidden shadow-2xl border-4 border-casino-gold;
+  }
+  
+  .slot-reel {
+    @apply relative h-32 bg-white overflow-hidden;
+  }
+  
+  .slot-symbol {
+    @apply absolute w-full h-full flex items-center justify-center text-4xl font-bold;
+  }
+  
+  .jackpot-text {
+    @apply text-casino-gold font-bold text-3xl md:text-5xl animate-pulse;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+  }
+  
+  .slot-button {
+    @apply bg-gradient-to-b from-casino-red to-casino-red/80 hover:from-casino-red/90 hover:to-casino-red/70 
+           text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition-transform 
+           duration-200 active:scale-95 border-2 border-white/20;
+  }
+  
+  .menu-card {
+    @apply relative overflow-hidden rounded-xl transition-all duration-300 
+           border-2 border-casino-gold shadow-xl hover:shadow-casino-gold/20 
+           bg-gradient-to-b from-casino-black/90 to-casino-purple/90 
+           hover:scale-[1.02] cursor-pointer;
+  }
+  
+  .balance-display {
+    @apply text-casino-gold font-bold text-xl md:text-2xl bg-casino-black/80 
+           px-4 py-2 rounded-full border border-casino-gold/50;
+  }
+
+  .glass-panel {
+    @apply backdrop-blur-xl bg-black/40 border border-white/20 text-white/90 shadow-xl;
+  }
+}

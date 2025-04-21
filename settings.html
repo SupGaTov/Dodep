@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Настройки - Lucky Slots</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-icons@0.171.0/font.min.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="container header-container">
+        <a href="index.html" class="logo">Lucky Slots</a>
+        
+        <div class="header-controls">
+          <div class="balance-display">
+            <i class="lucide-coins balance-icon"></i>
+            <span id="balance">1000</span> ₽
+          </div>
+          
+          <a href="profile.html" class="header-btn">
+            <i class="lucide-user"></i>
+          </a>
+          
+          <a href="settings.html" class="header-btn">
+            <i class="lucide-settings"></i>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container main-content">
+      <h1 class="page-title">Настройки</h1>
+      
+      <div class="glass-panel settings-card">
+        <h2 class="settings-title">Настройки звука</h2>
+        
+        <div class="settings-section">
+          <div class="sound-toggle">
+            <label for="sound-toggle" class="toggle-label">Звук</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="sound-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <p class="sound-description">
+            Включить или выключить все звуки в игре
+          </p>
+        </div>
+        
+        <div class="settings-section">
+          <div class="volume-label">
+            <i id="volume-icon" class="lucide-volume-2"></i>
+            Громкость
+          </div>
+          
+          <input type="range" id="volume-slider" min="0" max="100" value="50" class="volume-slider">
+          
+          <div class="volume-markers">
+            <span>0%</span>
+            <span>50%</span>
+            <span>100%</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="glass-panel settings-card">
+        <h2 class="settings-title">О приложении</h2>
+        
+        <div class="about-section">
+          <p>
+            Lucky Slots - специальное приложение, созданное для Кирюхи в честь его дня рождения!
+          </p>
+          <p style="margin-top: 1rem;">
+            Наслаждайтесь разнообразными слотами и выигрывайте виртуальные деньги. Не забудьте про особый слот с поздравлением!
+          </p>
+          
+          <div class="birthday-message">
+            <p class="birthday-title">С ДНЕМ РОЖДЕНИЯ, КИРЮХА!</p>
+            <p>Желаем удачи в игре и в жизни!</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div>
+            <p class="copyright">© 2025 Lucky Slots. Все права защищены.</p>
+          </div>
+          
+          <nav class="footer-nav">
+            <a href="index.html" class="footer-link">Главная</a>
+            <a href="profile.html" class="footer-link">Профиль</a>
+            <a href="settings.html" class="footer-link">Настройки</a>
+          </nav>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast notification container -->
+  <div id="toast-container"></div>
+
+  <!-- Audio elements -->
+  <audio id="spin-sound" src="sounds/spin-loop.mp3" loop></audio>
+  <audio id="win-sound" src="sounds/win.mp3"></audio>
+  <audio id="big-win-sound" src="sounds/big-win.mp3"></audio>
+  <audio id="stop-sound" src="sounds/stop.mp3"></audio>
+  <audio id="jackpot-sound" src="sounds/jackpot.mp3"></audio>
+  <audio id="card-deal-sound" src="sounds/card-deal.mp3"></audio>
+
+  <script src="js/storage.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/slot-data.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Update balance display
+      ui.updateBalance();
+      
+      // Get sound settings
+      const settings = gameStorage.getSoundSettings();
+      
+      // Set initial values
+      document.getElementById('sound-toggle').checked = settings.enabled;
+      document.getElementById('volume-slider').value = settings.volume;
+      updateVolumeIcon(settings.volume, settings.enabled);
+      
+      // Set event listeners
+      document.getElementById('sound-toggle').addEventListener('change', handleSoundToggle);
+      document.getElementById('volume-slider').addEventListener('input', handleVolumeChange);
+    });
+    
+    function handleSoundToggle(e) {
+      const enabled = e.target.checked;
+      gameStorage.setSoundEnabled(enabled);
+      
+      // Update volume icon
+      const volume = Number(document.getElementById('volume-slider').value);
+      updateVolumeIcon(volume, enabled);
+      
+      // Show toast
+      ui.showToast(enabled ? 'Звук включен' : 'Звук выключен', 'info');
+      
+      // Disable volume slider if sound is disabled
+      document.getElementById('volume-slider').disabled = !enabled;
+    }
+    
+    function handleVolumeChange(e) {
+      const volume = Number(e.target.value);
+      gameStorage.setSoundVolume(volume);
+      
+      // Update audio volumes
+      audioManager.updateVolumes(volume);
+      
+      // Update volume icon
+      const enabled = document.getElementById('sound-toggle').checked;
+      updateVolumeIcon(volume, enabled);
+    }
+    
+    function updateVolumeIcon(volume, enabled) {
+      const volumeIcon = document.getElementById('volume-icon');
+      
+      if (!enabled) {
+        volumeIcon.className = 'lucide-volume-x';
+        volumeIcon.style.color = '#888';
+      } else if (volume === 0) {
+        volumeIcon.className = 'lucide-volume-x';
+        volumeIcon.style.color = '';
+      } else if (volume < 50) {
+        volumeIcon.className = 'lucide-volume-1';
+        volumeIcon.style.color = '';
+      } else {
+        volumeIcon.className = 'lucide-volume-2';
+        volumeIcon.style.color = '';
+      }
+    }
+  </script>
+</body>
+</html>

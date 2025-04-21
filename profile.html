@@ -1,0 +1,339 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Профиль - Lucky Slots</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-icons@0.171.0/font.min.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="container header-container">
+        <a href="index.html" class="logo">Lucky Slots</a>
+        
+        <div class="header-controls">
+          <div class="balance-display">
+            <i class="lucide-coins balance-icon"></i>
+            <span id="balance">1000</span> ₽
+          </div>
+          
+          <a href="profile.html" class="header-btn">
+            <i class="lucide-user"></i>
+          </a>
+          
+          <a href="settings.html" class="header-btn">
+            <i class="lucide-settings"></i>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container main-content">
+      <h1 class="page-title">Личный кабинет</h1>
+      
+      <div class="profile-grid">
+        <div class="stats-card">
+          <h2 class="stats-title">
+            <i class="lucide-coins"></i>
+            Баланс
+          </h2>
+          <p class="stats-value" id="profile-balance">1000 ₽</p>
+        </div>
+        
+        <div class="stats-card">
+          <h2 class="stats-title">
+            <i class="lucide-trophy"></i>
+            Лучший выигрыш
+          </h2>
+          <p class="stats-value" id="best-win">0 ₽</p>
+        </div>
+        
+        <div class="stats-card">
+          <h2 class="stats-title">
+            <i class="lucide-history"></i>
+            Всего игр
+          </h2>
+          <p class="stats-value" id="total-games">0</p>
+        </div>
+      </div>
+      
+      <div class="glass-panel">
+        <div class="add-funds-container">
+          <h2 class="balance-title">Пополнить баланс</h2>
+          <button id="reset-button" class="reset-button">
+            <i class="lucide-rotate-ccw"></i>
+            Сбросить баланс
+          </button>
+        </div>
+        
+        <div class="funds-grid">
+          <button class="action-button" onclick="addFunds(1000)">1,000 ₽</button>
+          <button class="action-button" onclick="addFunds(5000)">5,000 ₽</button>
+          <button class="action-button" onclick="addFunds(10000)">10,000 ₽</button>
+          <button class="action-button" onclick="addFunds(25000)">25,000 ₽</button>
+          <button class="action-button" onclick="addFunds(50000)">50,000 ₽</button>
+          <button class="action-button" onclick="addFunds(100000)">100,000 ₽</button>
+        </div>
+        
+        <div class="free-case-button">
+          <button id="case-button" class="case-button">
+            <i class="lucide-gift"></i>
+            <span id="case-button-text">Открыть бесплатный кейс</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="glass-panel" style="margin-top: 2rem;">
+        <h2 class="history-title">История игр</h2>
+        <div id="history-container">
+          <!-- History items will be added here by JavaScript -->
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div>
+            <p class="copyright">© 2025 Lucky Slots. Все права защищены.</p>
+          </div>
+          
+          <nav class="footer-nav">
+            <a href="index.html" class="footer-link">Главная</a>
+            <a href="profile.html" class="footer-link">Профиль</a>
+            <a href="settings.html" class="footer-link">Настройки</a>
+          </nav>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast notification container -->
+  <div id="toast-container"></div>
+
+  <!-- Audio elements -->
+  <audio id="spin-sound" src="sounds/spin-loop.mp3" loop></audio>
+  <audio id="win-sound" src="sounds/win.mp3"></audio>
+  <audio id="big-win-sound" src="sounds/big-win.mp3"></audio>
+  <audio id="stop-sound" src="sounds/stop.mp3"></audio>
+  <audio id="jackpot-sound" src="sounds/jackpot.mp3"></audio>
+  <audio id="card-deal-sound" src="sounds/card-deal.mp3"></audio>
+
+  <script src="js/storage.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/slot-data.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    // Case rewards
+    const CASE_REWARDS = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000];
+    
+    // State
+    let isSpinning = false;
+    let displayedAmount = 0;
+    let caseTimer = null;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      // Update balance display
+      updateProfile();
+      
+      // Set up event listeners
+      document.getElementById('reset-button').addEventListener('click', resetBalance);
+      document.getElementById('case-button').addEventListener('click', animateCaseOpening);
+      
+      // Update case button state
+      updateCaseButton();
+      
+      // Start case timer
+      startCaseTimer();
+    });
+    
+    function updateProfile() {
+      // Update balance
+      const balance = gameStorage.getBalance();
+      document.getElementById('balance').textContent = ui.formatNumber(balance);
+      document.getElementById('profile-balance').textContent = ui.formatNumber(balance) + ' ₽';
+      
+      // Get history
+      const history = gameStorage.getHistory();
+      
+      // Calculate stats
+      let bestWin = 0;
+      history.forEach(item => {
+        if (item.amount > bestWin) {
+          bestWin = item.amount;
+        }
+      });
+      
+      document.getElementById('best-win').textContent = ui.formatNumber(bestWin) + ' ₽';
+      document.getElementById('total-games').textContent = history.length;
+      
+      // Update history
+      updateHistory(history);
+    }
+    
+    function updateHistory(history) {
+      const historyContainer = document.getElementById('history-container');
+      historyContainer.innerHTML = '';
+      
+      if (history.length === 0) {
+        historyContainer.innerHTML = '<p class="text-gray-400">История игр пуста</p>';
+        return;
+      }
+      
+      history.forEach(item => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        
+        const gameInfo = document.createElement('div');
+        gameInfo.className = 'history-game';
+        
+        const gameName = document.createElement('span');
+        gameName.className = 'history-name';
+        gameName.textContent = item.game;
+        
+        const gameTime = document.createElement('span');
+        gameTime.className = 'history-time';
+        gameTime.textContent = ui.formatRelativeTime(item.timestamp);
+        
+        gameInfo.appendChild(gameName);
+        gameInfo.appendChild(gameTime);
+        
+        const amount = document.createElement('span');
+        if (item.amount > 0) {
+          amount.className = 'history-win';
+          amount.textContent = '+' + ui.formatNumber(item.amount) + ' ₽';
+        } else {
+          amount.className = 'history-loss';
+          amount.textContent = ui.formatNumber(item.amount) + ' ₽';
+        }
+        
+        historyItem.appendChild(gameInfo);
+        historyItem.appendChild(amount);
+        
+        historyContainer.appendChild(historyItem);
+      });
+    }
+    
+    function addFunds(amount) {
+      gameStorage.addToBalance(amount);
+      updateProfile();
+      ui.showToast(`Баланс пополнен на ${ui.formatNumber(amount)} ₽`, 'success');
+    }
+    
+    function resetBalance() {
+      if (confirm('Вы уверены, что хотите сбросить баланс?')) {
+        gameStorage.resetGame();
+        updateProfile();
+        ui.showToast('Баланс сброшен', 'info');
+      }
+    }
+    
+    function animateCaseOpening() {
+      if (!gameStorage.canOpenFreeCase()) {
+        return;
+      }
+      
+      isSpinning = true;
+      updateCaseButton();
+      
+      let duration = 3000;
+      let startTime = Date.now();
+      let frame = 0;
+      
+      const animate = () => {
+        const now = Date.now();
+        const elapsed = now - startTime;
+        
+        if (elapsed < duration) {
+          frame = (frame + 1) % CASE_REWARDS.length;
+          displayedAmount = CASE_REWARDS[frame];
+          
+          const caseButtonText = document.getElementById('case-button-text');
+          caseButtonText.textContent = ui.formatNumber(displayedAmount) + ' ₽';
+          
+          requestAnimationFrame(animate);
+        } else {
+          // End animation
+          isSpinning = false;
+          
+          // Get random reward
+          const reward = CASE_REWARDS[Math.floor(Math.random() * CASE_REWARDS.length)];
+          
+          // Add to balance
+          gameStorage.addToBalance(reward);
+          
+          // Record opening
+          gameStorage.recordFreeCaseOpening();
+          
+          // Play win sound
+          audioManager.playSound('win');
+          
+          // Show toast
+          ui.showToast(`Вы получили ${ui.formatNumber(reward)} ₽!`, 'success');
+          
+          // Update profile
+          updateProfile();
+          
+          // Update button
+          updateCaseButton();
+          
+          // Add to history
+          gameStorage.addToHistory('Бесплатный кейс', reward);
+          
+          // Start timer
+          startCaseTimer();
+        }
+      };
+      
+      requestAnimationFrame(animate);
+    }
+    
+    function updateCaseButton() {
+      const caseButton = document.getElementById('case-button');
+      const caseButtonText = document.getElementById('case-button-text');
+      
+      if (isSpinning) {
+        caseButton.disabled = true;
+        caseButtonText.textContent = ui.formatNumber(displayedAmount) + ' ₽';
+        caseButtonText.classList.add('animate-pulse');
+      } else if (gameStorage.canOpenFreeCase()) {
+        caseButton.disabled = false;
+        caseButtonText.textContent = 'Открыть бесплатный кейс';
+        caseButtonText.classList.remove('animate-pulse');
+      } else {
+        caseButton.disabled = true;
+        
+        const timeUntilNext = gameStorage.getTimeUntilNextFreeCase();
+        caseButtonText.textContent = `Доступно через ${ui.formatTime(timeUntilNext)}`;
+        caseButtonText.classList.remove('animate-pulse');
+      }
+    }
+    
+    function startCaseTimer() {
+      if (caseTimer) {
+        clearInterval(caseTimer);
+      }
+      
+      // Update every second
+      caseTimer = setInterval(() => {
+        if (!isSpinning) {
+          updateCaseButton();
+          
+          // Stop interval if case is available
+          if (gameStorage.canOpenFreeCase()) {
+            clearInterval(caseTimer);
+            caseTimer = null;
+          }
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
