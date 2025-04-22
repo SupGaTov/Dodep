@@ -14,7 +14,7 @@
     <!-- Header -->
     <header class="header">
       <div class="container header-container">
-        <a href="index.html" class="logo">Lucky Slots</a>
+        <a href="index.html" class="logo">Lucky slots</slot></a>
         
         <div class="header-controls">
           <div class="balance-display">
@@ -71,12 +71,18 @@
   <div id="toast-container"></div>
 
   <!-- Audio elements -->
-  <audio id="spin-sound" src="sounds/spin-loop.mp3" loop></audio>
+  <audio id="spin-sound" src="public/sounds/spin-loop.mp3" loop></audio>
+  <!--spin(fix for s1ayka)-->>
   <audio id="win-sound" src="sounds/win.mp3"></audio>
+  <!--win(don't added)-->
   <audio id="big-win-sound" src="sounds/big-win.mp3"></audio>
+  <!--big win(go nahuy)-->
   <audio id="stop-sound" src="sounds/stop.mp3"></audio>
-  <audio id="jackpot-sound" src="sounds/jackpot.mp3"></audio>
-  <audio id="card-deal-sound" src="sounds/card-deal.mp3"></audio>
+  <!--stop(go nahuy)-->
+  <audio id="jackpot-sound" src="public/sounds/jackpot.mp3"></audio>
+  <!--jackpot(ready for using)--> 
+  <audio id="card-deal-sound" src="public/sounds/spin-loop.mp3"></audio>
+  <!--card-deal(doesn't work in slot's)-->
 
   <script src="js/storage.js"></script>
   <script src="js/audio.js"></script>
