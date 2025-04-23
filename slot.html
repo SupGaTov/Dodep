@@ -327,8 +327,11 @@
     }
     
     function spin() {
-      if (isSpinning) return;
-      
+      if (isSpinning) {
+        console.log('Stop')
+        return;
+      }
+      console.log('Start')
       // Check if we have free spins
       const hasFreeSpins = gameStorage.useFreeSpins(currentSlot.id);
       
@@ -375,6 +378,8 @@
       
       // Play spin sound
       if (currentSlot.isBirthdaySlot) {
+        //console.log('Play')
+        spinSound = audioManager.playLoopingSound('spin-loop');
         // No special sound for birthday slot
       } else {
         spinSound = audioManager.playLoopingSound('spin-loop');
