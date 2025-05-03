@@ -290,7 +290,7 @@
     }
     
     function changeBet(amount) {
-      const newBet = Math.max(currentSlot.cost, Math.min(100000, currentBet + amount));
+      const newBet = Math.max(currentSlot.cost, Math.min(1000, currentBet + amount));
       currentBet = newBet;
       
       const betInput = document.querySelector('.bet-input');
