@@ -26,7 +26,7 @@
             <i class="lucide-user"></i>
           </a>
           
-          <a href="settings.html" class="header-btn">
+          <a href="settings.html" class="header-btn2">
             <i class="lucide-settings"></i>
           </a>
         </div>
@@ -72,9 +72,9 @@
 
   <!-- Audio elements -->
   <audio id="spin-sound" src="public/sounds/spin-loop.mp3" loop></audio>
-  <!--spin(fix for s1ayka)-->>
-  <audio id="win-sound" src="sounds/win.mp3"></audio>
-  <!--win(don't added)-->
+  <!--spin(pofiksheno)-->>
+  <audio id="win-sound" src="public/sounds/win.mp3"></audio>
+  <!--win(dobavil)-->
   <audio id="big-win-sound" src="sounds/big-win.mp3"></audio>
   <!--big win(go nahuy)-->
   <audio id="stop-sound" src="sounds/stop.mp3"></audio>
@@ -166,7 +166,7 @@
       betInput.onchange = handleBetChange;
       
       const plusButton = document.createElement('button');
-      plusButton.className = 'bet-button';
+      plusButton.className = 'bet-button2';
       plusButton.innerHTML = '<i class="lucide-plus-circle"></i>';
       plusButton.onclick = () => changeBet(100);
       
