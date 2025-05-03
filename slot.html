@@ -72,7 +72,7 @@
 
   <!-- Audio elements -->
   <audio id="spin-sound" src="public/sounds/spin-loop.mp3" loop></audio>
-  <!--spin(pofiksheno)-->>
+  <!--spin(pofiksheno)-->
   <audio id="win-sound" src="public/sounds/win.mp3"></audio>
   <!--win(dobavil)-->
   <audio id="big-win-sound" src="sounds/big-win.mp3"></audio>
@@ -154,7 +154,7 @@
       // Add bet controls
       const minusButton = document.createElement('button');
       minusButton.className = 'bet-button';
-      minusButton.innerHTML = '<i class="lucide-minus-circle"></i>';
+      minusButton.innerHTML = '<i class="lucide-minus-circle">-</i>';
       minusButton.onclick = () => changeBet(-100);
       
       const betInput = document.createElement('input');
@@ -167,7 +167,7 @@
       
       const plusButton = document.createElement('button');
       plusButton.className = 'bet-button2';
-      plusButton.innerHTML = '<i class="lucide-plus-circle"></i>';
+      plusButton.innerHTML = '<i class="lucide-plus-circle">+</i>';
       plusButton.onclick = () => changeBet(100);
       
       betControlsDiv.appendChild(minusButton);

@@ -100,7 +100,7 @@ body {
 }
 /*profile button*/
 .header-btn {
-  background-image:url(img/profile-picture.png) ;
+  background-image:url(https://t4.ftcdn.net/jpg/08/19/66/31/360_F_819663119_che4sZSrmQv8uQJOzuN9TVQFQNHJlfQ2.jpg) ;
   background-size: cover;
   /*background-color: transparent;*/
   border: 1px solid rgba(255, 215, 0, 0.3);
@@ -121,7 +121,7 @@ body {
   /*setting button*/
 .header-btn2 {
   /*background-color: transparent;*/
-  background-image: url(/img/gear.png);
+  background-image: url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSz75zPc5SLeBt6qNiIUo3IiWfJvhnrxuk7QQ&s);
   background-size: cover;
   border: 1px solid rgba(255, 215, 0, 0.3);
   color: var(--casino-gold);
@@ -463,7 +463,7 @@ body {
 }
 
 .bet-button {
-  background-image:url(/img/minus.png) ;
+  background-image:url(https://static.vecteezy.com/system/resources/previews/009/267/401/non_2x/minus-sign-icon-free-png.png) ;
   background-size: cover;
   background-color: transparent;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -477,7 +477,7 @@ body {
   cursor: pointer;
 }
 .bet-button2 {
-  background-image:url(/img/add.png) ;
+  background-image:url(https://static-00.iconduck.com/assets.00/plus-icon-1024x1024-jdaf40nu.png) ;
   background-size: cover;
   background-color: transparent;
   border: 1px solid rgba(255, 255, 255, 0.2);
